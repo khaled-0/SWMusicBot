@@ -4,7 +4,16 @@ const ytdl = require("ytdl-core");
 const YouTube = require("youtube-sr").default;
 const scdl = require("soundcloud-downloader").default;
 const https = require("https");
-const { SOUNDCLOUD_CLIENT_ID, DEFAULT_VOLUME, PRUNING } = require("../util/Util");
+const { SOUNDCLOUD_CLIENT_ID, DEFAULT_VOLUME } = require("../util/Util");
+let config;
+
+    try {
+      config = require("../config.json");
+    } catch (error) {
+      config = null;
+    }
+
+const PRUNING = config ? config.PRUNING : process.env.PRUNING;
 
 module.exports = {
   name: "play",

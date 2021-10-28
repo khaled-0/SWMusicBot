@@ -5,8 +5,16 @@ const i18n = require("../util/i18n");
 
 module.exports = {
   async play(song, message) {
-    const { SOUNDCLOUD_CLIENT_ID,PRUNING } = require("../util/Util");
+    const { SOUNDCLOUD_CLIENT_ID } = require("../util/Util");
+let config;
 
+    try {
+      config = require("../config.json");
+    } catch (error) {
+      config = null;
+    }
+
+    const PRUNING = config ? config.PRUNING : false;
     const queue = message.client.queue.get(message.guild.id);
 
     if (!song) {
