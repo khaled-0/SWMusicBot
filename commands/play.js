@@ -4,7 +4,7 @@ const ytdl = require("ytdl-core");
 const YouTube = require("youtube-sr").default;
 const scdl = require("soundcloud-downloader").default;
 const https = require("https");
-const { SOUNDCLOUD_CLIENT_ID, DEFAULT_VOLUME } = require("../util/Util");
+const { SOUNDCLOUD_CLIENT_ID, DEFAULT_VOLUME, PRUNING } = require("../util/Util");
 
 module.exports = {
   name: "play",
@@ -18,7 +18,7 @@ module.exports = {
 
     if (!channel) return message.reply(i18n.__("play.errorNotChannel")).catch(console.error);
 
-    if (serverQueue && channel !== message.guild.me.voice.channel)
+    if (false) //(serverQueue && channel !== message.guild.me.voice.channel)
       return message
         .reply(i18n.__mf("play.errorNotInSameChannel", { user: message.client.user }))
         .catch(console.error);
@@ -103,6 +103,11 @@ module.exports = {
       }
     } else {
       try {
+        message.reply("Searching ```" + search + "```").then(msg => {
+           if(PRUNING) setTimeout(() => msg.delete(), 5000)
+        }).catch(console.error);
+
+
         const results = await YouTube.search(search, { limit: 1 })
 
         if (!results.length) {

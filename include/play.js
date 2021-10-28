@@ -5,17 +5,7 @@ const i18n = require("../util/i18n");
 
 module.exports = {
   async play(song, message) {
-    const { SOUNDCLOUD_CLIENT_ID } = require("../util/Util");
-
-    let config;
-
-    try {
-      config = require("../config.json");
-    } catch (error) {
-      config = null;
-    }
-
-    const PRUNING = config ? config.PRUNING : process.env.PRUNING;
+    const { SOUNDCLOUD_CLIENT_ID,PRUNING } = require("../util/Util");
 
     const queue = message.client.queue.get(message.guild.id);
 
@@ -87,8 +77,8 @@ module.exports = {
       var playingMessage = await queue.textChannel.send(
         i18n.__mf("play.startedPlaying", { title: song.title, url: song.url })
       );
-      await playingMessage.react("⏭");
       await playingMessage.react("⏯");
+      await playingMessage.react("⏭");
       await playingMessage.react("🔇");
       await playingMessage.react("🔉");
       await playingMessage.react("🔊");
