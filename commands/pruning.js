@@ -14,6 +14,13 @@ module.exports = {
   description: i18n.__("pruning.description"),
   execute(message) {
     if (!config) return;
+
+    if (!message.member.roles.cache.some(role =>
+      role.name === "Admin" || role.name === "Moderator" || role.name === "DJ")) {
+      return message.reply("You Don't Have Sufficient Permission For That").then(msg => {
+        msg.delete({ timeout: 5000 });
+      });
+    }
     config.PRUNING = !config.PRUNING;
 
     fs.writeFile("./config.json", JSON.stringify(config, null, 2), (err) => {

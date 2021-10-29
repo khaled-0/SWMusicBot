@@ -8,12 +8,12 @@ const { SOUNDCLOUD_CLIENT_ID, DEFAULT_VOLUME } = require("../util/Util");
 let config;
 
     try {
-      config = require("../config.json");
+      config = require("./config.json");
     } catch (error) {
       config = null;
     }
 
-const PRUNING = config ? config.PRUNING : process.env.PRUNING;
+const PRUNING = config ? config.PRUNING : false;
 
 module.exports = {
   name: "play",

@@ -6,6 +6,8 @@ const { readdirSync } = require("fs");
 const { join } = require("path");
 const { TOKEN, PREFIX } = require("./util/Util");
 const i18n = require("./util/i18n");
+const config = require("./config.json");
+const botChannelId = process.env['botChannelId'];
 
 const client = new Client({
   disableMentions: "everyone",
@@ -55,6 +57,16 @@ client.on("message", async (message) => {
     client.commands.find((cmd) => cmd.aliases && cmd.aliases.includes(commandName));
 
   if (!command) return;
+
+  if (message.channel.id != botChannelId) {
+    var PRUNING = config ? config.PRUNING : false;
+    if (PRUNING ){
+       return message.reply(`Use <#${botChannelId}> else Nub`).then(msg => {
+           msg.delete({ timeout: 12000}); 
+        });
+    }
+    return message.reply(`Use <#${botChannelId}> else Nub`);
+  }
 
   if (!cooldowns.has(command.name)) {
     cooldowns.set(command.name, new Collection());
