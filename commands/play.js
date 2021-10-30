@@ -1,4 +1,5 @@
 const i18n = require("../util/i18n");
+const SoundCloudSearch = require("../util/SoundCloudSearch");
 const { play } = require("../include/play");
 const ytdl = require("ytdl-core");
 const YouTube = require("youtube-sr").default;
@@ -7,13 +8,14 @@ const https = require("https");
 const { SOUNDCLOUD_CLIENT_ID, DEFAULT_VOLUME } = require("../util/Util");
 let config;
 
-    try {
-      config = require("./config.json");
-    } catch (error) {
-      config = null;
-    }
+try {
+  config = require("../config.json");
+} catch (error) {
+  config = null;
+}
 
 const PRUNING = config ? config.PRUNING : false;
+const SC_SEARCH_EXT = config ? config.SOUNDCLOUD_SEARCH_EXT : "-sc";
 
 module.exports = {
   name: "play",
@@ -58,7 +60,7 @@ module.exports = {
 
     if (mobileScRegex.test(url)) {
       try {
-        https.get(url, function (res) {
+        https.get(url, function(res) {
           if (res.statusCode == "302") {
             return message.client.commands.get("play").execute(message, [res.headers.location]);
           } else {
@@ -112,24 +114,37 @@ module.exports = {
       }
     } else {
       try {
-        message.reply("Searching ```" + search + "```").then(msg => {
-           if(PRUNING) setTimeout(() => msg.delete(), 5000)
-        }).catch(console.error);
+        var SC_SEARCH = message.content.endsWith(SC_SEARCH_EXT) ? true : false;
+        var searchingReplyMsg = SC_SEARCH ? "Searching ```" + search.replace(SC_SEARCH_EXT, '') + "``` In SoundCloud" : "Searching ```" + search + "```";
+        let searchingMsg = await message.reply(searchingReplyMsg);
 
-
-        const results = await YouTube.search(search, { limit: 1 })
-
-        if (!results.length) {
+        const results = SC_SEARCH ? await SoundCloudSearch.searchFor(search.replace(SC_SEARCH_EXT, ''), 1) : await YouTube.search(search, { limit: 1 }); 
+        if (results === undefined || (results!=undefined&&!results.length ) ) {
           message.reply(i18n.__("play.songNotFound")).catch(console.error);
+          if (PRUNING) setTimeout(() => searchingMsg.delete(), 5000)
           return;
         }
+       
 
-        songInfo = await ytdl.getInfo(results[0].url);
-        song = {
-          title: songInfo.videoDetails.title,
-          url: songInfo.videoDetails.video_url,
-          duration: songInfo.videoDetails.lengthSeconds
-        };
+        if (SC_SEARCH) {
+          trackInfo = await scdl.getInfo(results, SOUNDCLOUD_CLIENT_ID);
+          song = {
+            title: trackInfo.title,
+            url: trackInfo.permalink_url,
+            duration: Math.ceil(trackInfo.duration / 1000)
+          };
+
+        } else {
+          songInfo = await ytdl.getInfo(results[0].url);
+          song = {
+            title: songInfo.videoDetails.title,
+            url: songInfo.videoDetails.video_url,
+            duration: songInfo.videoDetails.lengthSeconds
+          };
+        }
+
+        if (PRUNING) setTimeout(() => searchingMsg.delete(), 5000);
+
       } catch (error) {
         console.error(error);
         return message.reply(error.message).catch(console.error);
