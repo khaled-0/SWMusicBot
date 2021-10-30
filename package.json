@@ -15,16 +15,19 @@
     "@discordjs/opus": "^0.5.3",
     "ansi-regex": "^6.0.1",
     "array-move": "^3.0.1",
+    "cpu-stat": "^2.0.1",
     "discord.js": "^12.5.1",
     "ffmpeg-static": "^4.4.0",
     "i18n": "^0.13.3",
     "lyrics-finder": "^21.0.5",
+    "moment": "^2.29.1",
+    "moment-duration-format": "^2.3.2",
+    "node-fetch": "1.7.3",
     "soundcloud-downloader": "^0.2.3",
     "string-progressbar": "^1.0.4",
     "youtube-sr": "4.1.7",
     "ytdl-core": "^4.9.1",
-    "ytdl-core-discord": "^1.3.1",
-    "node-fetch": "1.7.3"
+    "ytdl-core-discord": "^1.3.1"
   },
   "scripts": {
     "start": "node index.js",
