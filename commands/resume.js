@@ -1,5 +1,6 @@
 const { canModifyQueue } = require("../util/Util");
 const i18n = require("../util/i18n");
+require("../util/ExtendedMessage");
 
 module.exports = {
   name: "resume",
@@ -7,8 +8,12 @@ module.exports = {
   description: i18n.__("resume.description"),
   execute(message) {
     const queue = message.client.queue.get(message.guild.id);
-    if (!queue) return message.reply(i18n.__("resume.errorNotQueue")).catch(console.error);
-    if (!canModifyQueue(message.member)) return i18n.__("common.errorNotChannel");
+    if (!queue)
+      return message
+        .inlineReply(i18n.__("resume.errorNotQueue"))
+        .catch(console.error);
+    if (!canModifyQueue(message.member))
+      return i18n.__("common.errorNotChannel");
 
     if (!queue.playing) {
       queue.playing = true;
@@ -18,6 +23,8 @@ module.exports = {
         .catch(console.error);
     }
 
-    return message.reply(i18n.__("resume.errorPlaying")).catch(console.error);
-  }
+    return message
+      .inlineReply(i18n.__("resume.errorPlaying"))
+      .catch(console.error);
+  },
 };

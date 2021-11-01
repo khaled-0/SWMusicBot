@@ -3,7 +3,13 @@ const { MessageEmbed } = require("discord.js");
 const { play } = require("../include/play");
 const YouTube = require("youtube-sr").default;
 const scdl = require("soundcloud-downloader").default;
-const { SOUNDCLOUD_CLIENT_ID, MAX_PLAYLIST_SIZE, DEFAULT_VOLUME } = require("../util/Util");
+require("../util/ExtendedMessage");
+
+const {
+  SOUNDCLOUD_CLIENT_ID,
+  MAX_PLAYLIST_SIZE,
+  DEFAULT_VOLUME,
+} = require("../util/Util");
 
 module.exports = {
   name: "playlist",
@@ -16,17 +22,26 @@ module.exports = {
 
     if (!args.length)
       return message
-        .reply(i18n.__mf("playlist.usagesReply", { prefix: message.client.prefix }))
+        .inlineReply(
+          i18n.__mf("playlist.usagesReply", { prefix: message.client.prefix })
+        )
         .catch(console.error);
-    if (!channel) return message.reply(i18n.__("playlist.errorNotChannel")).catch(console.error);
+    if (!channel)
+      return message
+        .inlineReply(i18n.__("playlist.errorNotChannel"))
+        .catch(console.error);
 
     const permissions = channel.permissionsFor(message.client.user);
-    if (!permissions.has("CONNECT")) return message.reply(i18n.__("playlist.missingPermissionConnect"));
-    if (!permissions.has("SPEAK")) return message.reply(i18n.__("missingPermissionSpeak"));
+    if (!permissions.has("CONNECT"))
+      return message.inlineReply(i18n.__("playlist.missingPermissionConnect"));
+    if (!permissions.has("SPEAK"))
+      return message.inlineReply(i18n.__("missingPermissionSpeak"));
 
     if (serverQueue && channel !== message.guild.me.voice.channel)
       return message
-        .reply(i18n.__mf("play.errorNotInSameChannel", { user: message.client.user }))
+        .inlineReply(
+          i18n.__mf("play.errorNotInSameChannel", { user: message.client.user })
+        )
         .catch(console.error);
 
     const search = args.join(" ");
@@ -42,7 +57,7 @@ module.exports = {
       loop: false,
       volume: DEFAULT_VOLUME,
       muted: false,
-      playing: true
+      playing: true,
     };
 
     let playlist = null;
@@ -54,7 +69,9 @@ module.exports = {
         videos = await playlist.fetch();
       } catch (error) {
         console.error(error);
-        return message.reply(i18n.__("playlist.errorNotFoundPlaylist")).catch(console.error);
+        return message
+          .inlineReply(i18n.__("playlist.errorNotFoundPlaylist"))
+          .catch(console.error);
       }
     } else if (scdl.isValidUrl(args[0])) {
       if (args[0].includes("/sets/")) {
@@ -63,7 +80,7 @@ module.exports = {
         videos = playlist.tracks.map((track) => ({
           title: track.title,
           url: track.permalink_url,
-          duration: track.duration / 1000
+          duration: track.duration / 1000,
         }));
       }
     } else {
@@ -73,34 +90,45 @@ module.exports = {
         videos = await playlist.next();
       } catch (error) {
         console.error(error);
-        return message.reply(error.message).catch(console.error);
+        return message.inlineReply(error.message).catch(console.error);
       }
     }
 
     const newSongs = videos.videos
-      .filter((Video) => Video.title != "Private video" && Video.title != "Deleted video")
+      .filter(
+        (Video) =>
+          Video.title != "Private video" && Video.title != "Deleted video"
+      )
       .map((video) => {
         return (song = {
           title: video.title,
           url: `https://www.youtube.com/watch?v=${video.id}`,
-          duration: video.duration
+          duration: video.duration,
         });
       });
 
-    serverQueue ? serverQueue.songs.push(...newSongs) : queueConstruct.songs.push(...newSongs);
+    serverQueue
+      ? serverQueue.songs.push(...newSongs)
+      : queueConstruct.songs.push(...newSongs);
 
     let playlistEmbed = new MessageEmbed()
       .setTitle(`${playlist.title}`)
-      .setDescription(newSongs.map((song, index) => `${index + 1}. ${song.title}`))
+      .setDescription(
+        newSongs.map((song, index) => `${index + 1}. ${song.title}`)
+      )
       .setURL(playlist.url)
       .setColor("#F8AA2A")
       .setTimestamp();
 
     if (playlistEmbed.description.length >= 2048)
       playlistEmbed.description =
-        playlistEmbed.description.substr(0, 2007) + i18n.__("playlist.playlistCharLimit");
+        playlistEmbed.description.substr(0, 2007) +
+        i18n.__("playlist.playlistCharLimit");
 
-    message.channel.send(i18n.__mf("playlist.startedPlaylist", { author: message.author }), playlistEmbed);
+    message.channel.send(
+      i18n.__mf("playlist.startedPlaylist", { author: message.author }),
+      playlistEmbed
+    );
 
     if (!serverQueue) {
       message.client.queue.set(message.guild.id, queueConstruct);
@@ -113,8 +141,10 @@ module.exports = {
         console.error(error);
         message.client.queue.delete(message.guild.id);
         await channel.leave();
-        return message.channel.send(i18n.__mf("play.cantJoinChannel", { error: error })).catch(console.error);
+        return message.channel
+          .send(i18n.__mf("play.cantJoinChannel", { error: error }))
+          .catch(console.error);
       }
     }
-  }
+  },
 };

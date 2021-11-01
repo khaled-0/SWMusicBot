@@ -1,6 +1,7 @@
 const { MessageEmbed } = require("discord.js");
 const YouTube = require("youtube-sr").default;
 const i18n = require("../util/i18n");
+require("../util/ExtendedMessage");
 
 module.exports = {
   name: "search",
@@ -8,11 +9,19 @@ module.exports = {
   async execute(message, args) {
     if (!args.length)
       return message
-        .reply(i18n.__mf("search.usageReply", { prefix: message.client.prefix, name: module.exports.name }))
+        .inlineReply(
+          i18n.__mf("search.usageReply", {
+            prefix: message.client.prefix,
+            name: module.exports.name,
+          })
+        )
         .catch(console.error);
-    if (message.channel.activeCollector) return message.reply(i18n.__("search.errorAlreadyCollector"));
+    if (message.channel.activeCollector)
+      return message.inlineReply(i18n.__("search.errorAlreadyCollector"));
     if (!message.member.voice.channel)
-      return message.reply(i18n.__("search.errorNotChannel")).catch(console.error);
+      return message
+        .inlineReply(i18n.__("search.errorNotChannel"))
+        .catch(console.error);
 
     const search = args.join(" ");
 
@@ -23,8 +32,13 @@ module.exports = {
 
     try {
       const results = await YouTube.search(search, { limit: 10 });
-      
-      results.map((video, index) => resultsEmbed.addField(`https://youtu.be/${video.id}`, `${index + 1}. ${video.title}`));
+
+      results.map((video, index) =>
+        resultsEmbed.addField(
+          `https://youtu.be/${video.id}`,
+          `${index + 1}. ${video.title}`
+        )
+      );
       let resultsMessage = await message.channel.send(resultsEmbed);
 
       function filter(msg) {
@@ -33,7 +47,11 @@ module.exports = {
       }
 
       message.channel.activeCollector = true;
-      const response = await message.channel.awaitMessages(filter, { max: 1, time: 30000, errors: ["time"] });
+      const response = await message.channel.awaitMessages(filter, {
+        max: 1,
+        time: 30000,
+        errors: ["time"],
+      });
       const reply = response.first().content;
 
       if (reply.includes(",")) {
@@ -55,7 +73,7 @@ module.exports = {
     } catch (error) {
       console.error(error);
       message.channel.activeCollector = false;
-      message.reply(error.message).catch(console.error);
+      message.inlineReply(error.message).catch(console.error);
     }
-  }
+  },
 };

@@ -6,6 +6,8 @@ const YouTube = require("youtube-sr").default;
 const scdl = require("soundcloud-downloader").default;
 const https = require("https");
 const { SOUNDCLOUD_CLIENT_ID, DEFAULT_VOLUME } = require("../util/Util");
+require("../util/ExtendedMessage");
+
 let config;
 
 try {
@@ -27,24 +29,35 @@ module.exports = {
 
     const serverQueue = message.client.queue.get(message.guild.id);
 
-    if (!channel) return message.reply(i18n.__("play.errorNotChannel")).catch(console.error);
-
-    if (false) //(serverQueue && channel !== message.guild.me.voice.channel)
+    if (!channel)
       return message
-        .reply(i18n.__mf("play.errorNotInSameChannel", { user: message.client.user }))
+        .inlineReply(i18n.__("play.errorNotChannel"))
+        .catch(console.error);
+
+    if (false)
+      //(serverQueue && channel !== message.guild.me.voice.channel)
+      return message
+        .inlineReply(
+          i18n.__mf("play.errorNotInSameChannel", { user: message.client.user })
+        )
         .catch(console.error);
 
     if (!args.length)
       return message
-        .reply(i18n.__mf("play.usageReply", { prefix: message.client.prefix }))
+        .inlineReply(
+          i18n.__mf("play.usageReply", { prefix: message.client.prefix })
+        )
         .catch(console.error);
 
     const permissions = channel.permissionsFor(message.client.user);
-    if (!permissions.has("CONNECT")) return message.reply(i18n.__("play.missingPermissionConnect"));
-    if (!permissions.has("SPEAK")) return message.reply(i18n.__("play.missingPermissionSpeak"));
+    if (!permissions.has("CONNECT"))
+      return message.inlineReply(i18n.__("play.missingPermissionConnect"));
+    if (!permissions.has("SPEAK"))
+      return message.inlineReply(i18n.__("play.missingPermissionSpeak"));
 
     const search = args.join(" ");
-    const videoPattern = /^(https?:\/\/)?(www\.)?(m\.)?(youtube\.com|youtu\.?be)\/.+$/gi;
+    const videoPattern =
+      /^(https?:\/\/)?(www\.)?(m\.)?(youtube\.com|youtu\.?be)\/.+$/gi;
     const playlistPattern = /^.*(list=)([^#\&\?]*).*/gi;
     const scRegex = /^https?:\/\/(soundcloud\.com)\/(.*)$/;
     const mobileScRegex = /^https?:\/\/(soundcloud\.app\.goo\.gl)\/(.*)$/;
@@ -60,18 +73,24 @@ module.exports = {
 
     if (mobileScRegex.test(url)) {
       try {
-        https.get(url, function(res) {
+        https.get(url, function (res) {
           if (res.statusCode == "302") {
-            return message.client.commands.get("play").execute(message, [res.headers.location]);
+            return message.client.commands
+              .get("play")
+              .execute(message, [res.headers.location]);
           } else {
-            return message.reply(i18n.__("play.songNotFound")).catch(console.error);
+            return message
+              .inlineReply(i18n.__("play.songNotFound"))
+              .catch(console.error);
           }
         });
       } catch (error) {
         console.error(error);
-        return message.reply(error.message).catch(console.error);
+        return message.inlineReply(error.message).catch(console.error);
       }
-      return message.reply("Following url redirection...").catch(console.error);
+      return message
+        .inlineReply("Following url redirection...")
+        .catch(console.error);
     }
 
     const queueConstruct = {
@@ -82,7 +101,7 @@ module.exports = {
       loop: false,
       volume: DEFAULT_VOLUME,
       muted: false,
-      playing: true
+      playing: true,
     };
 
     let songInfo = null;
@@ -94,11 +113,11 @@ module.exports = {
         song = {
           title: songInfo.videoDetails.title,
           url: songInfo.videoDetails.video_url,
-          duration: songInfo.videoDetails.lengthSeconds
+          duration: songInfo.videoDetails.lengthSeconds,
         };
       } catch (error) {
         console.error(error);
-        return message.reply(error.message).catch(console.error);
+        return message.inlineReply(error.message).catch(console.error);
       }
     } else if (scRegex.test(url)) {
       try {
@@ -106,55 +125,71 @@ module.exports = {
         song = {
           title: trackInfo.title,
           url: trackInfo.permalink_url,
-          duration: Math.ceil(trackInfo.duration / 1000)
+          duration: Math.ceil(trackInfo.duration / 1000),
         };
       } catch (error) {
         console.error(error);
-        return message.reply(error.message).catch(console.error);
+        return message.inlineReply(error.message).catch(console.error);
       }
     } else {
       try {
         var SC_SEARCH = message.content.endsWith(SC_SEARCH_EXT) ? true : false;
-        var searchingReplyMsg = SC_SEARCH ? "Searching ```" + search.replace(SC_SEARCH_EXT, '') + "``` In SoundCloud" : "Searching ```" + search + "```";
-        let searchingMsg = await message.reply(searchingReplyMsg);
+        var searchingReplyMsg = SC_SEARCH
+          ? "Searching ```" +
+            search.replace(SC_SEARCH_EXT, "") +
+            "``` In SoundCloud"
+          : "Searching ```" + search + "```";
+        let searchingMsg = await message.inlineReply(searchingReplyMsg);
 
-        const results = SC_SEARCH ? await SoundCloudSearch.searchFor(search.replace(SC_SEARCH_EXT, ''), 1) : await YouTube.search(search, { limit: 1 }); 
-        if (results === undefined || (results!=undefined&&!results.length ) ) {
-          message.reply(i18n.__("play.songNotFound")).catch(console.error);
-          if (PRUNING) setTimeout(() => searchingMsg.delete(), 5000)
+        const results = SC_SEARCH
+          ? await SoundCloudSearch.searchFor(
+              search.replace(SC_SEARCH_EXT, ""),
+              1
+            )
+          : await YouTube.search(search, { limit: 1 });
+        if (
+          results === undefined ||
+          (results != undefined && !results.length)
+        ) {
+          message
+            .inlineReply(i18n.__("play.songNotFound"))
+            .catch(console.error);
+          if (PRUNING) setTimeout(() => searchingMsg.delete(), 5000);
           return;
         }
-       
 
         if (SC_SEARCH) {
           trackInfo = await scdl.getInfo(results, SOUNDCLOUD_CLIENT_ID);
           song = {
             title: trackInfo.title,
             url: trackInfo.permalink_url,
-            duration: Math.ceil(trackInfo.duration / 1000)
+            duration: Math.ceil(trackInfo.duration / 1000),
           };
-
         } else {
           songInfo = await ytdl.getInfo(results[0].url);
           song = {
             title: songInfo.videoDetails.title,
             url: songInfo.videoDetails.video_url,
-            duration: songInfo.videoDetails.lengthSeconds
+            duration: songInfo.videoDetails.lengthSeconds,
           };
         }
 
         if (PRUNING) setTimeout(() => searchingMsg.delete(), 5000);
-
       } catch (error) {
         console.error(error);
-        return message.reply(error.message).catch(console.error);
+        return message.inlineReply(error.message).catch(console.error);
       }
     }
 
     if (serverQueue) {
       serverQueue.songs.push(song);
       return serverQueue.textChannel
-        .send(i18n.__mf("play.queueAdded", { title: song.title, author: message.author }))
+        .send(
+          i18n.__mf("play.queueAdded", {
+            title: song.title,
+            author: message.author,
+          })
+        )
         .catch(console.error);
     }
 
@@ -169,7 +204,9 @@ module.exports = {
       console.error(error);
       message.client.queue.delete(message.guild.id);
       await channel.leave();
-      return message.channel.send(i18n.__mf("play.cantJoinChannel", { error: error })).catch(console.error);
+      return message.channel
+        .send(i18n.__mf("play.cantJoinChannel", { error: error }))
+        .catch(console.error);
     }
-  }
+  },
 };
