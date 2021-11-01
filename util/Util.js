@@ -9,6 +9,7 @@ try {
 }
 
 exports.TOKEN = process.env['discordToken'];
+exports.botChannelId = process.env['botChannelId'];
 exports.SOUNDCLOUD_CLIENT_ID = process.env['SOUNDCLOUD_CLIENT_ID'];
 exports.PREFIX = (config ? config.PREFIX : "/");
 exports.MAX_PLAYLIST_SIZE = (config ? config.MAX_PLAYLIST_SIZE : 10);
