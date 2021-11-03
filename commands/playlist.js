@@ -7,7 +7,6 @@ require("../util/ExtendedMessage");
 
 const {
   SOUNDCLOUD_CLIENT_ID,
-  MAX_PLAYLIST_SIZE,
   DEFAULT_VOLUME,
 } = require("../util/Util");
 

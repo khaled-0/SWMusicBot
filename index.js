@@ -1,6 +1,3 @@
-/**
- * Module Imports
- */
 const { Client, Collection } = require("discord.js");
 const { readdirSync } = require("fs");
 const { join } = require("path");
@@ -8,6 +5,7 @@ const { TOKEN, PREFIX, botChannelId } = require("./util/Util");
 const i18n = require("./util/i18n");
 const config = require("./config.json");
 require("./util/ExtendedMessage");
+const { registerSlashCommands } = require("./util/RegisterSlashCommands");
 
 const client = new Client({
   disableMentions: "everyone",
@@ -28,8 +26,9 @@ const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
  * Client Events
  */
 client.on("ready", () => {
-  console.log(`${client.user.username} ready!`);
   client.user.setActivity(`${PREFIX}help and ${PREFIX}play`, { type: "LISTENING" });
+  registerSlashCommands(client);
+  console.log(`${client.user.username} ready!`);
 });
 client.on("warn", (info) => console.log(info));
 client.on("error", console.error);
@@ -100,4 +99,86 @@ client.on("message", async (message) => {
     message.inlineReply(i18n.__("common.errorCommand")).catch(console.error);
   }
 });
+
+/**
+ *Listen And Execute Slash Commands
+ */
+client.ws.on("INTERACTION_CREATE", async (interaction) => {
+ if (!interaction.isCommand()) return;
+  //return console.log(interaction) //JSON.stringify(interaction.data.options, null, 4))
+  const commandName = interaction.data.name.toLowerCase();
+  const args = interaction.data.options;
+
+  const command =
+    client.commands.get(commandName) ||
+    client.commands.find((cmd) => cmd.aliases && cmd.aliases.includes(commandName));
+
+  if (!command) return;
+  console.log("Executing " + command.name)
+  if (interaction.channel_id != botChannelId) {
+    return client.api.interactions(interaction.id, interaction.token).callback.post({
+      data: {
+        type: 4,
+        data: {
+          ephemeral: true,
+          content: `Use <#${botChannelId}> else Nub`
+        }
+      }
+    });
+
+  }
+
+  if (!cooldowns.has(command.name)) {
+    cooldowns.set(command.name, new Collection());
+  }
+
+  const now = Date.now();
+  const timestamps = cooldowns.get(command.name);
+  const cooldownAmount = (command.cooldown || 1) * 1000;
+
+  if (timestamps.has(interaction.member.user.id)) {
+    const expirationTime = timestamps.get(interaction.member.user.id) + cooldownAmount;
+
+    if (now < expirationTime) {
+      const timeLeft = (expirationTime - now) / 1000;
+      return client.api.interactions(interaction.id, interaction.token).callback.post({
+        data: {
+          type: 4,
+          data: {
+            ephemeral: true,
+            content: i18n.__mf("common.cooldownMessage", { time: timeLeft.toFixed(1), name: command.name })
+          }
+        }
+      });
+    }
+  }
+
+  timestamps.set(message.author.id, now);
+  setTimeout(() => timestamps.delete(message.author.id), cooldownAmount);
+
+  try {
+    command.execute(interaction, args);
+  } catch (error) {
+    console.error(error);
+    client.api.interactions(interaction.id, interaction.token).callback.post({
+      data: {
+        type: 4,
+        data: {
+          ephemeral: true,
+          content: i18n.__("common.errorCommand")
+        }
+      }
+    });
+  }
+
+
+
+
+
+
+
+
+});
+
+//Keep Alive
 require("http").createServer((_, res) => res.end("Alive")).listen(8080)
