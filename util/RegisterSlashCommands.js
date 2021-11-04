@@ -6,7 +6,8 @@ const GuildID = process.env["GUILD_ID"];
 
 module.exports = {
   registerSlashCommands(client) {
-//return;
+    //Delete Sometimes Manually If Necessary
+    //client.api.applications(client.user.id).guilds(GuildID).commands(<id>).delete();
     /**
      * Get all old slash commands
      */
@@ -16,11 +17,11 @@ module.exports = {
         oldCommands[data.name] = data.id;
       })
     }).then(function() {
-      //return console.log(oldCommands['pause'])
       let commands = client.commands.array();
       commands.forEach((cmd) => {
+        if(cmd.excludeSlash) return;
+        
         if (cmd.name in oldCommands) {
-
           console.log(`Updating Slash Command: ${cmd.name}`)
           var oldCommandId = oldCommands[cmd.name];
           if(!cmd.commandOption) {

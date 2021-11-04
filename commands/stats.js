@@ -12,16 +12,16 @@ module.exports = {
     member: [],
   },
   aliases: ["ping", "inf"],
+  commandOption: undefined,
 
-  execute (message) {
-    const client = message.client;
+  execute (client, message, interaction, args) {
     const { version } = require("discord.js");
     cpuStat.usagePercent(async function (err, percent, seconds) {
       if (err) {
         return console.log(err);
       }
       const duration = moment
-        .duration(message.client.uptime)
+        .duration(client.uptime)
         .format(" D[d], H[h], m[m]");
 
       const embed = new MessageEmbed();
@@ -50,7 +50,7 @@ module.exports = {
       embed.addFields(
         {
           name: "API Latency",
-          value: `┕\`${message.client.ws.ping}ms\``,
+          value: `┕\`${client.ws.ping}ms\``,
           inline: true,
         },
         {
@@ -65,7 +65,20 @@ module.exports = {
         }
       );
 
-      return message.channel.send(embed);
+      if (interaction) {
+      return client.api.interactions(interaction.id, interaction.token).callback.post({
+        data: {
+          type: 4,
+          data: {
+            embeds: [embed]
+          }
+        }
+      });
+    }
+
+    return message
+      .inlineReply(embed)
+      .catch(console.error);
     });
-   }
-  };
+  }
+};

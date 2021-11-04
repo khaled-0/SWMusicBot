@@ -25,8 +25,8 @@ module.exports = {
   aliases: ["p"],
   description: i18n.__("play.description"),
   commandOption: [{
-    name: this.name,
-    description: "Video Title Or Url",
+    name: "query",
+    description: "Video Title Or Url (End with -sc To Use SoundCloud)",
     type: 3,
     required: true
   }],
@@ -59,7 +59,7 @@ module.exports = {
         .catch(console.error);
     }
 
-    if (clientVc != undefined && (channel != undefined && channel != clientVc)) {
+    if (!clientVc && (!channel && channel != clientVc)) {
       console.log(clientVc); console.log(channel)
       if (interaction) {
         return client.api.interactions(interaction.id, interaction.token).callback.post({
@@ -233,7 +233,7 @@ module.exports = {
           search.replace(SC_SEARCH_EXT, "") +
           "``` In SoundCloud"
           : "Searching ```" + search + "```";
-          let results;
+        let results;
 
         if (!interaction) {
 

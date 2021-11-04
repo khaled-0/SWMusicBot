@@ -107,8 +107,11 @@ client.ws.on("INTERACTION_CREATE", async (interaction) => {
   if (!(interaction.type === 2 && typeof interaction.targetId === 'undefined')) return;
 
   const commandName = interaction.data.name.toLowerCase();
-  const args = []; args[0] = interaction.data.options[0].value;
-console.log (args)
+  const args = []; 
+  try {
+   args[0] = interaction.data.options[0].value;
+  } catch (error) {}
+
   const command =
     client.commands.get(commandName) ||
     client.commands.find((cmd) => cmd.aliases && cmd.aliases.includes(commandName));

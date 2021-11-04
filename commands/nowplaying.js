@@ -72,7 +72,5 @@ module.exports = {
       return message
         .inlineReply(nowPlaying)
         .catch(console.error);
-
-    return message.channel.send(nowPlaying);
   },
 };

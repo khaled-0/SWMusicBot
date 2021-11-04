@@ -7,7 +7,7 @@ module.exports = {
   description: i18n.__("help.description"),
   commandOption: undefined,
   execute(client, message, interaction) {
-     
+
     let commands = client.commands.array();
 
     let helpEmbed = new MessageEmbed()
@@ -26,18 +26,18 @@ module.exports = {
     helpEmbed.setTimestamp();
 
     if (interaction) {
-        return client.api.interactions(interaction.id, interaction.token).callback.post({
+      return client.api.interactions(interaction.id, interaction.token).callback.post({
+        data: {
+          type: 4,
           data: {
-            type: 4,
-            data: {
-              embeds: [helpEmbed]
-            }
+            embeds: [helpEmbed]
           }
-        });
-      }
+        }
+      });
+    }
 
-      return message
-        .inlineReply(helpEmbed)
-        .catch(console.error);
+    return message
+      .inlineReply(helpEmbed)
+      .catch(console.error);
   }
 };

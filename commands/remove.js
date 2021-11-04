@@ -8,12 +8,74 @@ module.exports = {
   name: "remove",
   aliases: ["rm"],
   description: i18n.__("remove.description"),
-  execute(message, args) {
-    const queue = message.client.queue.get(message.guild.id);
+  commandOption: [{
+                name: "number",
+                description: "From Position Of Queue",
+                type: 4,
+                required: true
+              }],
+  execute(client, message, interaction, args) {
+    const queue = client.queue.get(interaction ? interaction.guild_id : message.guild.id);
+    if (!queue) {
+      if (interaction) {
+        return client.api.interactions(interaction.id, interaction.token).callback.post({
+          data: {
+            type: 4,
+            data: {
+              content: i18n.__("remove.errorNotQueue")
+             }
+          }
+        });
+      }
 
-    if (!queue) return message.channel.send(i18n.__("remove.errorNotQueue")).catch(console.error);
-    if (!canModifyQueue(message.member)) return i18n.__("common.errorNotChannel");
-    if (!args.length) return message.inlineReply(i18n.__mf("remove.usageReply", { prefix: message.client.prefix }));
+      return message
+        .inlineReply(i18n.__("remove.errorNotQueue"))
+        .catch(console.error);
+    }
+
+    let authorVc, clientVc;
+    try {
+      authorVc = client.guilds.cache.get(interaction ? interaction.guild_id : message.guild.id).members.cache.get(interaction ? interaction.member.user.id : message.author.id).voice.channel.id;
+    } catch (error) { authorVc = undefined };
+    try {
+      clientVc = client.guilds.cache.get(interaction ? interaction.guild_id : message.guild.id).members.cache.get(client.user.id).voice.channel.id
+    } catch (error) { clientVc = undefined };
+    
+    if (!clientVc && (!channel && channel != clientVc)) {
+      if (interaction) {
+        return client.api.interactions(interaction.id, interaction.token).callback.post({
+          data: {
+            type: 4,
+            data: {
+              ephemeral: true,
+              content: i18n.__("common.errorNotChannel")
+            }
+          }
+        });
+      }
+
+      return message
+        .inlineReply(i18n.__("common.errorNotChannel"))
+        .catch(console.error);
+    }
+
+    if (!args.length) {
+      if (interaction) {
+        return client.api.interactions(interaction.id, interaction.token).callback.post({
+          data: {
+            type: 4,
+            data: {
+              content: i18n.__mf("remove.usageReply", { prefix: client.prefix })
+             }
+          }
+        });
+      }
+
+      return message
+        .inlineReply(i18n.__mf("remove.usageReply", { prefix: client.prefix }))
+        .catch(console.error);
+
+    }
 
     const arguments = args.join("");
     const songs = arguments.split(",").map((arg) => parseInt(arg));
@@ -28,20 +90,31 @@ module.exports = {
       queue.textChannel.send(
         i18n.__mf("remove.result", {
           title: removed.map((song) => song.title).join("\n"),
-          author: message.author.id
+          author: interaction ? interaction.member.user.id : message.author.id
         })
       );
     } else if (!isNaN(args[0]) && args[0] >= 1 && args[0] <= queue.songs.length) {
-      console.log("we got elsed!");
       return queue.textChannel.send(
         i18n.__mf("remove.result", {
           title: queue.songs.splice(args[0] - 1, 1)[0].title,
-          author: message.author.id
+          author: interaction ? interaction.member.user.id : message.author
         })
       );
     } else {
-      console.log("we got the last one");
-      return message.inlineReply(i18n.__mf("remove.usageReply", { prefix: message.client.prefix }));
+      if (interaction) {
+        return client.api.interactions(interaction.id, interaction.token).callback.post({
+          data: {
+            type: 4,
+            data: {
+              content: i18n.__mf("remove.usageReply", { prefix: client.prefix })
+             }
+          }
+        });
+      }
+
+      return message
+        .inlineReply(i18n.__mf("remove.usageReply", { prefix: client.prefix }))
+        .catch(console.error);
     }
   }
 };

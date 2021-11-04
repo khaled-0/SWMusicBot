@@ -6,7 +6,8 @@ require("../util/ExtendedMessage");
 module.exports = {
   name: "search",
   description: i18n.__("search.description"),
-  async execute(message, args) {
+  excludeSlash : true,
+  async execute(client, message, interaction, args) {
     if (!args.length)
       return message
         .inlineReply(

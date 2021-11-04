@@ -6,8 +6,9 @@ module.exports = {
   name: "queue",
   cooldown: 5,
   aliases: ["q"],
+  excludeSlash : true,
   description: i18n.__("queue.description"),
-  async execute(message) {
+  async execute(client, message, interaction, args) {
     const permissions = message.channel.permissionsFor(message.client.user);
     if (!permissions.has(["MANAGE_MESSAGES", "ADD_REACTIONS"]))
       return message.inlineReply(i18n.__("queue.missingPermissionMessage"));
@@ -20,8 +21,7 @@ module.exports = {
     const embeds = generateQueueEmbed(message, queue.songs);
 
     const queueEmbed = await message.channel.send(
-      `**${i18n.__mf("queue.currentPage")} ${currentPage + 1}/${
-        embeds.length
+      `**${i18n.__mf("queue.currentPage")} ${currentPage + 1}/${embeds.length
       }**`,
       embeds[currentPage]
     );

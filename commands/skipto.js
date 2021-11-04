@@ -6,7 +6,8 @@ module.exports = {
   name: "skipto",
   aliases: ["st"],
   description: i18n.__("skipto.description"),
-  execute(message, args) {
+  excludeSlash : true,
+  execute(client, message, interaction, args) {
     if (!args.length || isNaN(args[0]))
       return message
         .inlineReply(

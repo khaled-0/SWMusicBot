@@ -13,7 +13,8 @@ try {
 module.exports = {
   name: "pruning",
   description: i18n.__("pruning.description"),
-  execute(message) {
+  excludeSlash : true,
+  execute(client, message, interaction, args) {
     if (!config) return;
 
     if (

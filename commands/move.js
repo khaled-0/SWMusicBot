@@ -8,8 +8,8 @@ module.exports = {
   aliases: ["mv"],
   description: i18n.__("move.description"),
   commandOption: [{
-                name: "Move",
-                description: "Queue Position",
+                name: "position",
+                description: "Target Video Position In Queue",
                 type: 4,
                 required: true
               }],
@@ -22,7 +22,7 @@ module.exports = {
             type: 4,
             data: {
               content: i18n.__("move.errorNotQueue")
-            }
+             }
           }
         });
       }
@@ -39,7 +39,7 @@ module.exports = {
     try {
       clientVc = client.guilds.cache.get(interaction ? interaction.guild_id : message.guild.id).members.cache.get(client.user.id).voice.channel.id
     } catch (error) { clientVc = undefined };
-    if (!authorVc || !clientVc || clientVc != authorVc) {
+    if (!clientVc && (!channel && channel != clientVc)) {
       if (interaction) {
         return client.api.interactions(interaction.id, interaction.token).callback.post({
           data: {

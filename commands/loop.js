@@ -10,7 +10,7 @@ module.exports = {
   execute(client, message, interaction) {
     const queue = client.queue.get(interaction ? interaction.guild_id : message.guild.id);
     if (!queue) {
-       if (interaction) {
+      if (interaction) {
         return client.api.interactions(interaction.id, interaction.token).callback.post({
           data: {
             type: 4,
@@ -35,8 +35,8 @@ module.exports = {
       clientVc = client.guilds.cache.get(interaction ? interaction.guild_id : message.guild.id).members.cache.get(client.user.id).voice.channel.id
     } catch (error) { clientVc = undefined };
 
-    if (!authorVc || !clientVc || clientVc != authorVc) {
-       if (interaction) {
+    if (!clientVc && (!authorVc && authorVc != clientVc)) {
+      if (interaction) {
         return client.api.interactions(interaction.id, interaction.token).callback.post({
           data: {
             type: 4,

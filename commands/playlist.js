@@ -14,8 +14,9 @@ module.exports = {
   name: "playlist",
   cooldown: 5,
   aliases: ["pl"],
+  excludeSlash : true,
   description: i18n.__("playlist.description"),
-  async execute(message, args) {
+  async execute(client, message, interaction, args) {
     const { channel } = message.member.voice;
     const serverQueue = message.client.queue.get(message.guild.id);
 
@@ -29,12 +30,6 @@ module.exports = {
       return message
         .inlineReply(i18n.__("playlist.errorNotChannel"))
         .catch(console.error);
-
-    const permissions = channel.permissionsFor(message.client.user);
-    if (!permissions.has("CONNECT"))
-      return message.inlineReply(i18n.__("playlist.missingPermissionConnect"));
-    if (!permissions.has("SPEAK"))
-      return message.inlineReply(i18n.__("missingPermissionSpeak"));
 
     if (serverQueue && channel !== message.guild.me.voice.channel)
       return message
