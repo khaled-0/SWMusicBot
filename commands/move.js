@@ -99,6 +99,21 @@ module.exports = {
       args[0] - 1,
       args[1] <= 2 || isNaN(args[1]) ? 1 : args[1] - 1
     );
+
+    if (interaction) {
+      return client.api.interactions(interaction.id, interaction.token).callback.post({
+        data: {
+          type: 4,
+          data: {
+            embeds: i18n.__mf("move.result", {
+        author: interaction ? interaction.member.user.id : message.author,
+        title: song.title,
+        index: args[1] <= 2 || isNaN(args[1]) ? 2 : args[1],
+      })
+          }
+        }
+      });
+    }
     queue.textChannel.send(
       i18n.__mf("move.result", {
         author: interaction ? interaction.member.user.id : message.author,

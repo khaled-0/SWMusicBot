@@ -17,8 +17,8 @@ module.exports = {
   excludeSlash : true,
   description: i18n.__("playlist.description"),
   async execute(client, message, interaction, args) {
-    const { channel } = message.member.voice;
-    const serverQueue = message.client.queue.get(message.guild.id);
+    const { channel } = client.guilds.cache.get(interaction ? interaction.guild_id : message.guild.id).members.cache.get(client.user.id).voice;
+    const serverQueue = client.queue.get(interaction ? interaction.guild_id : message.guild.id);
 
     if (!args.length)
       return message
@@ -130,7 +130,7 @@ module.exports = {
       try {
         queueConstruct.connection = await channel.join();
         await queueConstruct.connection.voice.setSelfDeaf(true);
-        play(queueConstruct.songs[0], message);
+        play(queueConstruct.songs[0], message, interaction, client);
       } catch (error) {
         console.error(error);
         message.client.queue.delete(message.guild.id);

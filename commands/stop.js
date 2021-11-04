@@ -53,6 +53,17 @@ module.exports = {
 
     queue.songs = [];
     queue.connection.dispatcher.end();
+
+    if (interaction) {
+      return client.api.interactions(interaction.id, interaction.token).callback.post({
+        data: {
+          type: 4,
+          data: {
+            embeds: i18n.__mf("stop.result", { author: interaction ? interaction.member.user.id : message.author })
+          }
+        }
+      });
+    }
     queue.textChannel
       .send(i18n.__mf("stop.result", { author: interaction ? interaction.member.user.id : message.author }))
       .catch(console.error);

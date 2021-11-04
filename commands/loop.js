@@ -54,6 +54,19 @@ module.exports = {
     }
     // toggle from false to true and reverse
     queue.loop = !queue.loop;
+
+    if (interaction) {
+      return client.api.interactions(interaction.id, interaction.token).callback.post({
+        data: {
+          type: 4,
+          data: {
+            embeds:  i18n.__mf("loop.result", {
+          loop: queue.loop ? i18n.__("common.on") : i18n.__("common.off"),
+        })
+          }
+        }
+      });
+    }
     return queue.textChannel
       .send(
         i18n.__mf("loop.result", {

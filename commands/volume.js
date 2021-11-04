@@ -79,6 +79,17 @@ module.exports = {
 
     queue.volume = args[0];
     queue.connection.dispatcher.setVolumeLogarithmic(args[0] / 100);
+
+    if (interaction) {
+      return client.api.interactions(interaction.id, interaction.token).callback.post({
+        data: {
+          type: 4,
+          data: {
+            embeds: i18n.__mf("volume.result", { arg: args[0] })
+          }
+        }
+      });
+    }
     return queue.textChannel
       .send(i18n.__mf("volume.result", { arg: args[0] }))
       .catch(console.error);

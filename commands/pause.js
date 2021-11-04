@@ -54,6 +54,17 @@ module.exports = {
     if (queue.playing) {
       queue.playing = false;
       queue.connection.dispatcher.pause(true);
+
+      if (interaction) {
+      return client.api.interactions(interaction.id, interaction.token).callback.post({
+        data: {
+          type: 4,
+          data: {
+            embeds: i18n.__mf("pause.result", { author: interaction ? interaction.member.user.id : message.author })
+           }
+         }
+        });
+      }
       return queue.textChannel
         .send(i18n.__mf("pause.result", { author: interaction ? interaction.member.user.id : message.author }))
         .catch(console.error);

@@ -96,9 +96,9 @@ module.exports = {
 
     // Start the playlist if playlist url was provided
     if (!videoPattern.test(args[0]) && playlistPattern.test(args[0])) {
-      return client.commands.get("playlist").execute(message, args);
+      return client.commands.get("playlist").execute(client, message, interaction, args);
     } else if (scdl.isValidUrl(url) && url.includes("/sets/")) {
-      return client.commands.get("playlist").execute(message, args);
+      return client.commands.get("playlist").execute(client, message, interaction, args);
     }
 
     if (mobileScRegex.test(url)) {
@@ -344,6 +344,17 @@ module.exports = {
       client.queue.delete(interaction ? interaction.guild_id : message.guild.id);
       await channel.leave();
       const msgChannel = interaction ? client.guilds.cache.get(interaction ? interaction.guild_id : message.guild.id).channels.cache.get(interaction.channel_id) : message.channel;
+
+      if (interaction) {
+      return client.api.interactions(interaction.id, interaction.token).callback.post({
+        data: {
+          type: 4,
+          data: {
+            embeds: i18n.__mf("play.cantJoinChannel", { error: error })
+          }
+        }
+      });
+    }
       return msgChannel
         .send(i18n.__mf("play.cantJoinChannel", { error: error }))
         .catch(console.error);

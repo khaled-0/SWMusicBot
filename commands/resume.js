@@ -56,7 +56,7 @@ module.exports = {
       queue.playing = true;
       queue.connection.dispatcher.resume();
       return queue.textChannel
-        .send(i18n.__mf("resume.resultNotPlaying", { author: message.author }))
+        .send(i18n.__mf("resume.resultNotPlaying", { author: interaction ? interaction.member.user.id : message.author }))
         .catch(console.error);
     }
 

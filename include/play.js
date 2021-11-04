@@ -2,11 +2,17 @@ const ytdl = require("ytdl-core-discord");
 const scdl = require("soundcloud-downloader").default;
 const { canModifyQueue, STAY_TIME } = require("../util/Util");
 const i18n = require("../util/i18n");
+class ClientHolder {
+  static _client;
+}
 //fffffffffffffffffffffff
 module.exports = {
   async play(song, message, interaction, client) {
+    if ((!client) && (!ClientHolder._client)) return;
+    if (!client) client = ClientHolder._client
+    ClientHolder._client = client;
     const { SOUNDCLOUD_CLIENT_ID } = require("../util/Util");
-let config;
+    let config;
 
     try {
       config = require("./config.json");
@@ -15,15 +21,16 @@ let config;
     }
 
     const PRUNING = config ? config.PRUNING : false;
-    const queue = message.client.queue.get(message.guild.id);
+    const queue = client.queue.get(interaction ? interaction.guild_id : message.guild.id);
 
     if (!song) {
       setTimeout(function () {
-        if (queue.connection.dispatcher && message.guild.me.voice.channel) return;
+        if (queue.connection.dispatcher && client.guilds.cache.get(interaction ? interaction.guild_id : message.guild.id).members.cache.get(client.user.id).voice.channel) return;
         queue.channel.leave();
       }, STAY_TIME * 1000);
+
       !PRUNING && queue.textChannel.send(i18n.__("play.queueEnded")).catch(console.error);
-      return message.client.queue.delete(message.guild.id);
+      return client.queue.delete(interaction ? interaction.guild_id : message.guild.id);
     }
 
     let stream = null;
@@ -47,12 +54,22 @@ let config;
       }
 
       console.error(error);
+      if (interaction) {
+        return client.api.interactions(interaction.id, interaction.token).callback.post({
+          data: {
+            type: 4,
+            data: {
+              embeds: i18n.__mf("play.queueError", { error: error.message ? error.message : error })
+            }
+          }
+        });
+      }
       return message.channel.send(
         i18n.__mf("play.queueError", { error: error.message ? error.message : error })
       );
     }
 
-    queue.connection.on("disconnect", () => message.client.queue.delete(message.guild.id));
+    queue.connection.on("disconnect", () => client.queue.delete(interaction ? interaction.guild_id : message.guild.id));
 
     const dispatcher = queue.connection
       .play(stream, { type: streamType })
@@ -96,14 +113,14 @@ let config;
       console.error(error);
     }
 
-    const filter = (reaction, user) => user.id !== message.client.user.id;
+    const filter = (reaction, user) => user.id !== client.user.id;
     var collector = playingMessage.createReactionCollector(filter, {
       time: song.duration > 0 ? song.duration * 1000 : 600000
     });
 
     collector.on("collect", (reaction, user) => {
       if (!queue) return;
-      const member = message.guild.member(user);
+      const member = client.guilds.cache.get(interaction ? interaction.guild_id : message.guild.id).member(user);
 
       switch (reaction.emoji.name) {
         case "⏭":
