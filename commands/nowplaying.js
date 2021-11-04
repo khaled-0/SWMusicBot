@@ -6,12 +6,25 @@ require("../util/ExtendedMessage");
 module.exports = {
   name: "np",
   description: i18n.__("nowplaying.description"),
-  execute(message) {
-    const queue = message.client.queue.get(message.guild.id);
-    if (!queue || !queue.songs.length)
+  commandOption: undefined,
+  execute(client, message, interaction) {
+   const queue = client.queue.get(interaction ? interaction.guild_id : message.guild.id);
+    if (!queue) {
+      if (interaction) {
+        return client.api.interactions(interaction.id, interaction.token).callback.post({
+          data: {
+            type: 4,
+            data: {
+              content: i18n.__("nowplaying.errorNotQueue")
+            }
+          }
+        });
+      }
+
       return message
         .inlineReply(i18n.__("nowplaying.errorNotQueue"))
         .catch(console.error);
+    }
 
     const song = queue.songs[0];
     const seek =
@@ -44,6 +57,21 @@ module.exports = {
         })
       );
     }
+
+    if (interaction) {
+        return client.api.interactions(interaction.id, interaction.token).callback.post({
+          data: {
+            type: 4,
+            data: {
+              embeds: [nowPlaying]
+            }
+          }
+        });
+      }
+
+      return message
+        .inlineReply(nowPlaying)
+        .catch(console.error);
 
     return message.channel.send(nowPlaying);
   },

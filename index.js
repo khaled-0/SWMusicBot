@@ -26,9 +26,9 @@ const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
  * Client Events
  */
 client.on("ready", () => {
+  console.log(`${client.user.username} ready!`);
   client.user.setActivity(`${PREFIX}help and ${PREFIX}play`, { type: "LISTENING" });
   registerSlashCommands(client);
-  console.log(`${client.user.username} ready!`);
 });
 client.on("warn", (info) => console.log(info));
 client.on("error", console.error);
@@ -93,7 +93,7 @@ client.on("message", async (message) => {
   setTimeout(() => timestamps.delete(message.author.id), cooldownAmount);
 
   try {
-    command.execute(message, args);
+    command.execute(client, message, null, args);
   } catch (error) {
     console.error(error);
     message.inlineReply(i18n.__("common.errorCommand")).catch(console.error);
@@ -104,23 +104,22 @@ client.on("message", async (message) => {
  *Listen And Execute Slash Commands
  */
 client.ws.on("INTERACTION_CREATE", async (interaction) => {
- if (!interaction.isCommand()) return;
-  //return console.log(interaction) //JSON.stringify(interaction.data.options, null, 4))
-  const commandName = interaction.data.name.toLowerCase();
-  const args = interaction.data.options;
+  if (!(interaction.type === 2 && typeof interaction.targetId === 'undefined')) return;
 
+  const commandName = interaction.data.name.toLowerCase();
+  const args = []; args[0] = interaction.data.options[0].value;
+console.log (args)
   const command =
     client.commands.get(commandName) ||
     client.commands.find((cmd) => cmd.aliases && cmd.aliases.includes(commandName));
-
+//return client.commands.get("np").execute(client,null,interaction,args);
   if (!command) return;
-  console.log("Executing " + command.name)
+  console.log("Executing " + command.name);
   if (interaction.channel_id != botChannelId) {
     return client.api.interactions(interaction.id, interaction.token).callback.post({
       data: {
         type: 4,
         data: {
-          ephemeral: true,
           content: `Use <#${botChannelId}> else Nub`
         }
       }
@@ -145,7 +144,6 @@ client.ws.on("INTERACTION_CREATE", async (interaction) => {
         data: {
           type: 4,
           data: {
-            ephemeral: true,
             content: i18n.__mf("common.cooldownMessage", { time: timeLeft.toFixed(1), name: command.name })
           }
         }
@@ -153,31 +151,22 @@ client.ws.on("INTERACTION_CREATE", async (interaction) => {
     }
   }
 
-  timestamps.set(message.author.id, now);
-  setTimeout(() => timestamps.delete(message.author.id), cooldownAmount);
+  timestamps.set(interaction.member.user.id, now);
+  setTimeout(() => timestamps.delete(interaction.member.user.id), cooldownAmount);
 
   try {
-    command.execute(interaction, args);
+    command.execute(client, null, interaction, args);
   } catch (error) {
     console.error(error);
     client.api.interactions(interaction.id, interaction.token).callback.post({
       data: {
         type: 4,
         data: {
-          ephemeral: true,
           content: i18n.__("common.errorCommand")
         }
       }
     });
   }
-
-
-
-
-
-
-
-
 });
 
 //Keep Alive

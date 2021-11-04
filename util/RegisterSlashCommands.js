@@ -6,7 +6,7 @@ const GuildID = process.env["GUILD_ID"];
 
 module.exports = {
   registerSlashCommands(client) {
-
+//return;
     /**
      * Get all old slash commands
      */
@@ -23,41 +23,54 @@ module.exports = {
 
           console.log(`Updating Slash Command: ${cmd.name}`)
           var oldCommandId = oldCommands[cmd.name];
-          client.api
+          if(!cmd.commandOption) {
+             client.api
+            .applications(client.user.id)
+            .guilds(GuildID)
+            .commands(oldCommandId).patch({
+              data: {
+                name: cmd.name,
+                description: cmd.description
+              }
+            }).catch(console.error);
+          } else {
+             client.api
             .applications(client.user.id)
             .guilds(GuildID)
             .commands(oldCommandId).patch({
               data: {
                 name: cmd.name,
                 description: cmd.description,
-                options:
-                [{
-                  name: cmd.name,
-                  description: "Input",
-                  type: 3,
-                  required: true
-                }]
+                options: cmd.commandOption
               }
             }).catch(console.error);
-
+          }
+          
         } else {
           console.log(`Adding Slash Command: ${cmd.name}`)
+          if(!cmd.commandOption) {
           client.api
             .applications(client.user.id)
             .guilds(GuildID)
             .commands.post({
               data: {
                 name: cmd.name,
-                description: cmd.description,
-                options:
-                [{
-                  name: cmd.name,
-                  description: "Input",
-                  type: 3,
-                  required: false
-                }]
+                description: cmd.description
               }
             }).catch(console.error);
+          } else {
+            client.api
+            .applications(client.user.id)
+            .guilds(GuildID)
+            .commands.post({
+              data: {
+                name: cmd.name,
+                description: cmd.description,
+                options: cmd.commandOption
+              }
+            }).catch(console.error);
+          }
+
         }
 
       });

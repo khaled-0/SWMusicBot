@@ -24,36 +24,66 @@ module.exports = {
   cooldown: 3,
   aliases: ["p"],
   description: i18n.__("play.description"),
-  async execute(message, args) {
-    const { channel } = message.member.voice;
+  commandOption: [{
+    name: this.name,
+    description: "Video Title Or Url",
+    type: 3,
+    required: true
+  }],
+  async execute(client, message, interaction, args) {
 
-    const serverQueue = message.client.queue.get(message.guild.id);
+    const serverQueue = client.queue.get(interaction ? interaction.guild_id : message.guild.id);
 
-    if (!channel)
+    let channel, clientVc;
+    try {
+      channel = client.guilds.cache.get(interaction ? interaction.guild_id : message.guild.id).members.cache.get(interaction ? interaction.member.user.id : message.author.id).voice.channel;
+    } catch (error) { channel = undefined }; //authorVc
+    try {
+      clientVc = client.guilds.cache.get(interaction ? interaction.guild_id : message.guild.id).members.cache.get(client.user.id).voice.channel;
+    } catch (error) { clientVc = undefined };
+
+    if (!channel) {
+      if (interaction) {
+        return client.api.interactions(interaction.id, interaction.token).callback.post({
+          data: {
+            type: 4,
+            data: {
+              content: i18n.__("play.errorNotChannel")
+            }
+          }
+        });
+      }
+
       return message
         .inlineReply(i18n.__("play.errorNotChannel"))
         .catch(console.error);
+    }
 
-    if (false)
-      //(serverQueue && channel !== message.guild.me.voice.channel)
+    if (clientVc != undefined && (channel != undefined && channel != clientVc)) {
+      console.log(clientVc); console.log(channel)
+      if (interaction) {
+        return client.api.interactions(interaction.id, interaction.token).callback.post({
+          data: {
+            type: 4,
+            data: {
+              content: i18n.__mf("play.errorNotInSameChannel", { user: client.user })
+            }
+          }
+        });
+      }
+
       return message
-        .inlineReply(
-          i18n.__mf("play.errorNotInSameChannel", { user: message.client.user })
-        )
+        .inlineReply(i18n.__mf("play.errorNotInSameChannel", { user: client.user }))
         .catch(console.error);
+    }
 
     if (!args.length)
       return message
         .inlineReply(
-          i18n.__mf("play.usageReply", { prefix: message.client.prefix })
+          i18n.__mf("play.usageReply", { prefix: client.prefix })
         )
         .catch(console.error);
 
-    const permissions = channel.permissionsFor(message.client.user);
-    if (!permissions.has("CONNECT"))
-      return message.inlineReply(i18n.__("play.missingPermissionConnect"));
-    if (!permissions.has("SPEAK"))
-      return message.inlineReply(i18n.__("play.missingPermissionSpeak"));
 
     const search = args.join(" ");
     const videoPattern =
@@ -66,35 +96,72 @@ module.exports = {
 
     // Start the playlist if playlist url was provided
     if (!videoPattern.test(args[0]) && playlistPattern.test(args[0])) {
-      return message.client.commands.get("playlist").execute(message, args);
+      return client.commands.get("playlist").execute(message, args);
     } else if (scdl.isValidUrl(url) && url.includes("/sets/")) {
-      return message.client.commands.get("playlist").execute(message, args);
+      return client.commands.get("playlist").execute(message, args);
     }
 
     if (mobileScRegex.test(url)) {
       try {
-        https.get(url, function (res) {
+        https.get(url, function(res) {
           if (res.statusCode == "302") {
-            return message.client.commands
+            return client.commands
               .get("play")
-              .execute(message, [res.headers.location]);
+              .execute(client, message, interaction, [res.headers.location]);
           } else {
+            if (interaction) {
+              return client.api.interactions(interaction.id, interaction.token).callback.post({
+                data: {
+                  type: 4,
+                  data: {
+                    content: i18n.__("play.songNotFound")
+                  }
+                }
+              });
+            }
+
             return message
               .inlineReply(i18n.__("play.songNotFound"))
               .catch(console.error);
+
           }
         });
       } catch (error) {
         console.error(error);
-        return message.inlineReply(error.message).catch(console.error);
+        if (interaction) {
+          return client.api.interactions(interaction.id, interaction.token).callback.post({
+            data: {
+              type: 4,
+              data: {
+                content: error.message
+              }
+            }
+          });
+        }
+
+        return message
+          .inlineReply(error.message)
+          .catch(console.error);
       }
+
+      if (interaction) {
+        return client.api.interactions(interaction.id, interaction.token).callback.post({
+          data: {
+            type: 4,
+            data: {
+              content: "Following url redirection..."
+            }
+          }
+        });
+      }
+
       return message
         .inlineReply("Following url redirection...")
         .catch(console.error);
     }
 
     const queueConstruct = {
-      textChannel: message.channel,
+      textChannel: interaction ? client.guilds.cache.get(interaction ? interaction.guild_id : message.guild.id).channels.cache.get(interaction.channel_id) : message.channel,
       channel,
       connection: null,
       songs: [],
@@ -117,7 +184,20 @@ module.exports = {
         };
       } catch (error) {
         console.error(error);
-        return message.inlineReply(error.message).catch(console.error);
+        if (interaction) {
+          return client.api.interactions(interaction.id, interaction.token).callback.post({
+            data: {
+              type: 4,
+              data: {
+                content: error.message
+              }
+            }
+          });
+        }
+
+        return message
+          .inlineReply(error.message)
+          .catch(console.error);
       }
     } else if (scRegex.test(url)) {
       try {
@@ -129,33 +209,79 @@ module.exports = {
         };
       } catch (error) {
         console.error(error);
-        return message.inlineReply(error.message).catch(console.error);
+        if (interaction) {
+          return client.api.interactions(interaction.id, interaction.token).callback.post({
+            data: {
+              type: 4,
+              data: {
+                content: error.message
+              }
+            }
+          });
+        }
+
+        return message
+          .inlineReply(error.message)
+          .catch(console.error);
       }
     } else {
       try {
-        var SC_SEARCH = message.content.endsWith(SC_SEARCH_EXT) ? true : false;
+        var query = interaction ? args[0] : message.content;
+        var SC_SEARCH = query.endsWith(SC_SEARCH_EXT) ? true : false;
         var searchingReplyMsg = SC_SEARCH
           ? "Searching ```" +
-            search.replace(SC_SEARCH_EXT, "") +
-            "``` In SoundCloud"
+          search.replace(SC_SEARCH_EXT, "") +
+          "``` In SoundCloud"
           : "Searching ```" + search + "```";
-        let searchingMsg = await message.inlineReply(searchingReplyMsg);
+          let results;
 
-        const results = SC_SEARCH
-          ? await SoundCloudSearch.searchFor(
+        if (!interaction) {
+
+          let searchingMsg = await message.inlineReply(searchingReplyMsg);
+          results = SC_SEARCH
+            ? await SoundCloudSearch.searchFor(
               search.replace(SC_SEARCH_EXT, ""),
               1
             )
-          : await YouTube.search(search, { limit: 1 });
-        if (
-          results === undefined ||
-          (results != undefined && !results.length)
-        ) {
-          message
-            .inlineReply(i18n.__("play.songNotFound"))
-            .catch(console.error);
+            : await YouTube.search(search, { limit: 1 });
+          if (results === undefined ||
+            (results != undefined && !results.length)) {
+            message
+              .inlineReply(i18n.__("play.songNotFound"))
+              .catch(console.error);
+            if (PRUNING) setTimeout(() => searchingMsg.delete(), 5000);
+            return;
+          }
+
           if (PRUNING) setTimeout(() => searchingMsg.delete(), 5000);
-          return;
+        } else {
+
+          client.api.interactions(interaction.id, interaction.token).callback.post({
+            data: {
+              type: 4,
+              data: {
+                content: searchingReplyMsg
+              }
+            }
+          });
+
+          results = SC_SEARCH
+            ? await SoundCloudSearch.searchFor(
+              search.replace(SC_SEARCH_EXT, ""),
+              1
+            )
+            : await YouTube.search(search, { limit: 1 });
+          if (results === undefined ||
+            (results != undefined && !results.length)) {
+            return client.api.interactions(interaction.id, interaction.token).callback.post({
+              data: {
+                type: 4,
+                data: {
+                  content: i18n.__("play.songNotFound")
+                }
+              }
+            });
+          }
         }
 
         if (SC_SEARCH) {
@@ -174,10 +300,23 @@ module.exports = {
           };
         }
 
-        if (PRUNING) setTimeout(() => searchingMsg.delete(), 5000);
+
       } catch (error) {
         console.error(error);
-        return message.inlineReply(error.message).catch(console.error);
+        if (interaction) {
+          return client.api.interactions(interaction.id, interaction.token).callback.post({
+            data: {
+              type: 4,
+              data: {
+                content: error.message
+              }
+            }
+          });
+        }
+
+        return message
+          .inlineReply(error.message)
+          .catch(console.error);
       }
     }
 
@@ -187,24 +326,25 @@ module.exports = {
         .send(
           i18n.__mf("play.queueAdded", {
             title: song.title,
-            author: message.author,
+            author: interaction ? interaction.member.user.id : message.author,
           })
         )
         .catch(console.error);
     }
 
     queueConstruct.songs.push(song);
-    message.client.queue.set(message.guild.id, queueConstruct);
+    client.queue.set(interaction ? interaction.guild_id : message.guild.id, queueConstruct);
 
     try {
       queueConstruct.connection = await channel.join();
       await queueConstruct.connection.voice.setSelfDeaf(true);
-      play(queueConstruct.songs[0], message);
+      play(queueConstruct.songs[0], message, interaction, client);
     } catch (error) {
       console.error(error);
-      message.client.queue.delete(message.guild.id);
+      client.queue.delete(interaction ? interaction.guild_id : message.guild.id);
       await channel.leave();
-      return message.channel
+      const msgChannel = interaction ? client.guilds.cache.get(interaction ? interaction.guild_id : message.guild.id).channels.cache.get(interaction.channel_id) : message.channel;
+      return msgChannel
         .send(i18n.__mf("play.cantJoinChannel", { error: error }))
         .catch(console.error);
     }
