@@ -11,10 +11,7 @@ require("./util/ExtendedMessage");
 
 const client = new Client({
   disableMentions: "everyone",
-  restTimeOffset: 0,
-  allowedMentions: {
-    repliedUser: false
-  }
+  restTimeOffset: 0    
 });
 
 client.login(TOKEN);
